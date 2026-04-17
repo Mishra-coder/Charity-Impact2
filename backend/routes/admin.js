@@ -422,4 +422,23 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+router.delete('/charities/:charityId', async (req, res) => {
+  try {
+    const { charityId } = req.params;
+
+    const { error } = await supabase
+      .from('charities')
+      .delete()
+      .eq('id', charityId);
+
+    if (error) {
+      return res.status(500).json({ error: { message: 'Failed to delete charity' } });
+    }
+
+    res.json({ success: true, message: 'Charity deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: { message: 'Server error' } });
+  }
+});
+
 module.exports = router;
