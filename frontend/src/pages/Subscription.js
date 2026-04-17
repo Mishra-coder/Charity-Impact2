@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../utils/api';
-import { format } from 'date-fns';
-import { FiCheck } from 'react-icons/fi';
 import './Dashboard.css';
 
 const Subscription = () => {
   const [subscription, setSubscription] = useState(null);
   const [charities, setCharities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [planType, setPlanType] = useState('monthly');
-  const [charityId, setCharityId] = useState('');
-  const [charityPercentage, setCharityPercentage] = useState(10);
-  const [submitting, setSubmitting] = useState(false);
+  const [showSubscribeForm, setShowSubscribeForm] = useState(false);
+  const [formData, setFormData] = useState({
+    planType: 'monthly',
+    charityId: '',
+    charityPercentage: 10
+  });
 
   useEffect(() => {
     fetchData();
@@ -21,18 +20,14 @@ const Subscription = () => {
 
   const fetchData = async () => {
     try {
-      const [subRes, charRes] = await Promise.all([
+      const [subResponse, charResponse] = await Promise.all([
         api.get('/subscriptions/me'),
         api.get('/charities')
       ]);
-      setSubscription(subRes.data.data);
-      setCharities(charRes.data.data);
-      if (charRes.data.data.length > 0) {
-        setCharityId(charRes.data.data[0].id);
-      }
+      setSubscription(subResponse.data.data);
+      setCharities(charResponse.data.data);
     } catch (error) {
-      setSubscription(null);
-      setCharities([]);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -40,21 +35,19 @@ const Subscription = () => {
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
+    
+    if (!formData.charityId) {
+      alert('Please select a charity');
+      return;
+    }
 
     try {
-      await api.post('/subscriptions', {
-        planType,
-        charityId,
-        charityPercentage: parseFloat(charityPercentage)
-      });
-      setShowModal(false);
+      await api.post('/subscriptions', formData);
+      setShowSubscribeForm(false);
       fetchData();
       alert('Subscription created successfully!');
     } catch (error) {
       alert(error.response?.data?.error?.message || 'Failed to create subscription');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -66,10 +59,17 @@ const Subscription = () => {
     try {
       await api.post('/subscriptions/cancel');
       fetchData();
-      alert('Subscription cancelled');
+      alert('Subscription cancelled successfully');
     } catch (error) {
       alert('Failed to cancel subscription');
     }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   if (loading) {
@@ -80,245 +80,258 @@ const Subscription = () => {
     );
   }
 
-  const monthlyPrice = 100;
-  const yearlyPrice = 1000;
-  const selectedPrice = planType === 'monthly' ? monthlyPrice : yearlyPrice;
-  const charityAmount = (selectedPrice * charityPercentage) / 100;
-
   return (
     <Layout>
       <div className="dashboard">
         <h1 className="page-title">Subscription</h1>
 
         {subscription ? (
-          <div className="dashboard-section">
-            <h2 className="section-title">Current Subscription</h2>
-            <div style={{ padding: '20px', background: '#f9fafb', borderRadius: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div>
-                  <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>Plan</div>
-                  <div style={{ fontSize: '18px', fontWeight: '600', textTransform: 'capitalize' }}>
-                    {subscription.plan_type}
+          <div>
+            <div className="dashboard-section">
+              <h2 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '600' }}>Current Plan</h2>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: '24px', fontWeight: '700', color: '#1f2937', margin: 0 }}>
+                      {subscription.plan_type === 'monthly' ? 'Monthly' : 'Yearly'} Plan
+                    </p>
+                    <p style={{ color: '#6b7280', margin: '4px 0 0 0' }}>
+                      ${subscription.amount} / {subscription.plan_type === 'monthly' ? 'month' : 'year'}
+                    </p>
                   </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>Status</div>
-                  <div style={{ fontSize: '18px', fontWeight: '600', textTransform: 'capitalize', color: '#16a34a' }}>
-                    {subscription.status}
-                  </div>
-                </div>
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>Amount</div>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#1a472a' }}>
-                  ${subscription.amount}
-                </div>
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>Renewal Date</div>
-                <div style={{ fontSize: '16px', fontWeight: '500' }}>
-                  {format(new Date(subscription.renewal_date), 'MMMM dd, yyyy')}
-                </div>
-              </div>
-              {subscription.status === 'active' && (
-                <button
-                  onClick={handleCancel}
-                  style={{
-                    padding: '10px 20px',
-                    background: '#fee2e2',
-                    color: '#dc2626',
-                    borderRadius: '8px',
+                  <span style={{
+                    padding: '6px 16px',
+                    borderRadius: '12px',
+                    fontSize: '14px',
                     fontWeight: '600',
-                    marginTop: '8px'
-                  }}
-                >
-                  Cancel Subscription
-                </button>
-              )}
+                    textTransform: 'capitalize',
+                    background: subscription.status === 'active' ? '#dcfce7' : '#fee2e2',
+                    color: subscription.status === 'active' ? '#16a34a' : '#dc2626'
+                  }}>
+                    {subscription.status}
+                  </span>
+                </div>
+
+                <div style={{ paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#6b7280' }}>Start Date:</span>
+                      <span style={{ fontWeight: '500' }}>
+                        {new Date(subscription.start_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#6b7280' }}>End Date:</span>
+                      <span style={{ fontWeight: '500' }}>
+                        {new Date(subscription.end_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#6b7280' }}>Next Renewal:</span>
+                      <span style={{ fontWeight: '500' }}>
+                        {new Date(subscription.renewal_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {subscription.status === 'active' && (
+                  <button
+                    onClick={handleCancel}
+                    style={{
+                      padding: '10px 20px',
+                      background: '#dc2626',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      marginTop: '16px'
+                    }}
+                  >
+                    Cancel Subscription
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ) : (
-          <>
-            <div className="dashboard-section" style={{ marginBottom: '32px' }}>
-              <h2 className="section-title">Choose Your Plan</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                <div style={{
-                  padding: '24px',
-                  background: 'white',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px'
-                }}>
-                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>Monthly</h3>
-                  <div style={{ fontSize: '32px', fontWeight: '700', color: '#1a472a', marginBottom: '16px' }}>
-                    ${monthlyPrice}<span style={{ fontSize: '16px', fontWeight: '400', color: '#6b7280' }}>/month</span>
-                  </div>
-                  <ul style={{ listStyle: 'none', marginBottom: '20px' }}>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <FiCheck style={{ color: '#16a34a' }} />
-                      <span>Track unlimited scores</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <FiCheck style={{ color: '#16a34a' }} />
-                      <span>Enter monthly draws</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <FiCheck style={{ color: '#16a34a' }} />
-                      <span>Support charities</span>
-                    </li>
-                  </ul>
-                </div>
+          <div>
+            {!showSubscribeForm ? (
+              <div className="dashboard-section">
+                <h2 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '600' }}>Choose Your Plan</h2>
+                <p style={{ color: '#6b7280', marginBottom: '24px' }}>
+                  Subscribe to track your scores, enter prize draws, and support charities.
+                </p>
 
-                <div style={{
-                  padding: '24px',
-                  background: 'white',
-                  border: '2px solid #1a472a',
-                  borderRadius: '12px',
-                  position: 'relative'
-                }}>
+                <div style={{ display: 'grid', gap: '16px', maxWidth: '600px' }}>
                   <div style={{
-                    position: 'absolute',
-                    top: '-12px',
-                    right: '20px',
-                    padding: '4px 12px',
-                    background: '#1a472a',
-                    color: 'white',
+                    padding: '24px',
+                    border: '2px solid #e5e7eb',
                     borderRadius: '12px',
-                    fontSize: '12px',
-                    fontWeight: '600'
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    setFormData({ ...formData, planType: 'monthly' });
+                    setShowSubscribeForm(true);
                   }}>
-                    Save 17%
+                    <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 8px 0' }}>Monthly Plan</h3>
+                    <p style={{ fontSize: '32px', fontWeight: '700', color: '#2563eb', margin: '0 0 8px 0' }}>
+                      $100<span style={{ fontSize: '16px', fontWeight: '400', color: '#6b7280' }}>/month</span>
+                    </p>
+                    <ul style={{ color: '#6b7280', paddingLeft: '20px', margin: '16px 0 0 0' }}>
+                      <li>Track unlimited golf scores</li>
+                      <li>Enter monthly prize draws</li>
+                      <li>Support your chosen charity</li>
+                      <li>Access to all features</li>
+                    </ul>
                   </div>
-                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>Yearly</h3>
-                  <div style={{ fontSize: '32px', fontWeight: '700', color: '#1a472a', marginBottom: '16px' }}>
-                    ${yearlyPrice}<span style={{ fontSize: '16px', fontWeight: '400', color: '#6b7280' }}>/year</span>
+
+                  <div style={{
+                    padding: '24px',
+                    border: '2px solid #2563eb',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    position: 'relative'
+                  }}
+                  onClick={() => {
+                    setFormData({ ...formData, planType: 'yearly' });
+                    setShowSubscribeForm(true);
+                  }}>
+                    <span style={{
+                      position: 'absolute',
+                      top: '-12px',
+                      right: '24px',
+                      padding: '4px 12px',
+                      background: '#2563eb',
+                      color: 'white',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '600'
+                    }}>
+                      Save $200
+                    </span>
+                    <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 8px 0' }}>Yearly Plan</h3>
+                    <p style={{ fontSize: '32px', fontWeight: '700', color: '#2563eb', margin: '0 0 8px 0' }}>
+                      $1000<span style={{ fontSize: '16px', fontWeight: '400', color: '#6b7280' }}>/year</span>
+                    </p>
+                    <ul style={{ color: '#6b7280', paddingLeft: '20px', margin: '16px 0 0 0' }}>
+                      <li>All monthly plan features</li>
+                      <li>2 months free</li>
+                      <li>Priority support</li>
+                      <li>Exclusive yearly draws</li>
+                    </ul>
                   </div>
-                  <ul style={{ listStyle: 'none', marginBottom: '20px' }}>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <FiCheck style={{ color: '#16a34a' }} />
-                      <span>Track unlimited scores</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <FiCheck style={{ color: '#16a34a' }} />
-                      <span>Enter monthly draws</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <FiCheck style={{ color: '#16a34a' }} />
-                      <span>Support charities</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <FiCheck style={{ color: '#16a34a' }} />
-                      <span>2 months free</span>
-                    </li>
-                  </ul>
                 </div>
               </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="btn-primary"
-                style={{ marginTop: '24px', width: '100%', padding: '14px' }}
-              >
-                Subscribe Now
-              </button>
-            </div>
-          </>
-        )}
+            ) : (
+              <div className="dashboard-section">
+                <h2 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '600' }}>Complete Your Subscription</h2>
+                <form onSubmit={handleSubscribe}>
+                  <div style={{ display: 'grid', gap: '16px', maxWidth: '500px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                        Selected Plan
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.planType === 'monthly' ? 'Monthly - $100/month' : 'Yearly - $1000/year'}
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          background: '#f9fafb'
+                        }}
+                      />
+                    </div>
 
-        {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-              <h2 style={{ marginBottom: '20px', fontSize: '20px', fontWeight: '600' }}>Complete Subscription</h2>
-              
-              <form onSubmit={handleSubscribe}>
-                <div className="form-group">
-                  <label>Plan Type</label>
-                  <select value={planType} onChange={(e) => setPlanType(e.target.value)} style={{
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '15px',
-                    width: '100%'
-                  }}>
-                    <option value="monthly">Monthly - ${monthlyPrice}</option>
-                    <option value="yearly">Yearly - ${yearlyPrice}</option>
-                  </select>
-                </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                        Choose Charity
+                      </label>
+                      <select
+                        name="charityId"
+                        value={formData.charityId}
+                        onChange={handleChange}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          fontSize: '14px'
+                        }}
+                      >
+                        <option value="">Select a charity</option>
+                        {charities.map(charity => (
+                          <option key={charity.id} value={charity.id}>
+                            {charity.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div className="form-group">
-                  <label>Select Charity</label>
-                  <select value={charityId} onChange={(e) => setCharityId(e.target.value)} style={{
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '15px',
-                    width: '100%'
-                  }}>
-                    {charities.map(charity => (
-                      <option key={charity.id} value={charity.id}>{charity.name}</option>
-                    ))}
-                  </select>
-                </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                        Charity Contribution ({formData.charityPercentage}%)
+                      </label>
+                      <input
+                        type="range"
+                        name="charityPercentage"
+                        value={formData.charityPercentage}
+                        onChange={handleChange}
+                        min="10"
+                        max="100"
+                        step="5"
+                        style={{ width: '100%' }}
+                      />
+                      <p style={{ color: '#6b7280', fontSize: '14px', margin: '8px 0 0 0' }}>
+                        ${((formData.planType === 'monthly' ? 100 : 1000) * formData.charityPercentage / 100).toFixed(2)} will go to your chosen charity
+                      </p>
+                    </div>
 
-                <div className="form-group">
-                  <label>Charity Contribution ({charityPercentage}%)</label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    value={charityPercentage}
-                    onChange={(e) => setCharityPercentage(e.target.value)}
-                    style={{ width: '100%' }}
-                  />
-                  <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '8px' }}>
-                    ${charityAmount.toFixed(2)} will go to charity
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                      <button
+                        type="submit"
+                        style={{
+                          flex: 1,
+                          padding: '12px 20px',
+                          background: '#2563eb',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: '600'
+                        }}
+                      >
+                        Subscribe Now
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowSubscribeForm(false)}
+                        style={{
+                          padding: '12px 20px',
+                          background: '#f3f4f6',
+                          color: '#374151',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: '600'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                  <button type="submit" className="btn-primary" disabled={submitting} style={{ flex: 1 }}>
-                    {submitting ? 'Processing...' : 'Subscribe'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    style={{
-                      flex: 1,
-                      padding: '10px 20px',
-                      background: '#f3f4f6',
-                      color: '#374151',
-                      borderRadius: '8px',
-                      fontWeight: '600'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+                </form>
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      <style>{`
-        .modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-
-        .modal {
-          background: white;
-          border-radius: 12px;
-          padding: 32px;
-          width: 90%;
-          max-width: 480px;
-          max-height: 90vh;
-          overflow-y: auto;
-        }
-      `}</style>
     </Layout>
   );
 };
