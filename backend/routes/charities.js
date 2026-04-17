@@ -46,38 +46,33 @@ router.get('/contributions', authenticate, async (req, res) => {
   }
 });
 
-router.get('/stats', async (req, res) => {
+router.get('/stats', authenticate, async (req, res) => {
   try {
-    const { data: stats, error } = await supabase
+    const { data: userContributions, error: userError } = await supabase
       .from('charity_contributions')
-      .select(`
-        charity_id,
-        amount,
-        charities:charity_id (
-          name,
-          logo_url
-        )
-      `);
+      .select('amount, charity_id')
+      .eq('user_id', req.user.id);
 
-    if (error) {
+    if (userError) {
       return res.status(500).json({ error: { message: 'Failed to fetch stats' } });
     }
 
-    const charityStats = {};
-    stats.forEach(contribution => {
-      const charityId = contribution.charity_id;
-      if (!charityStats[charityId]) {
-        charityStats[charityId] = {
-          charity: contribution.charities,
-          totalAmount: 0,
-          contributionCount: 0
-        };
-      }
-      charityStats[charityId].totalAmount += parseFloat(contribution.amount || 0);
-      charityStats[charityId].contributionCount += 1;
+    let totalContributed = 0;
+    const uniqueCharities = new Set();
+
+    userContributions.forEach(contribution => {
+      totalContributed += parseFloat(contribution.amount || 0);
+      uniqueCharities.add(contribution.charity_id);
     });
 
-    res.json({ success: true, data: Object.values(charityStats) });
+    res.json({ 
+      success: true, 
+      data: {
+        totalContributed: totalContributed.toFixed(2),
+        contributionCount: userContributions.length,
+        charitiesSupported: uniqueCharities.size
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: { message: 'Server error' } });
   }
