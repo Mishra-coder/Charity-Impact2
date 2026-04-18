@@ -14,15 +14,11 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     try {
       const user = await login(email, password);
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      if (user.role === 'admin') navigate('/admin');
+      else navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Login failed');
     } finally {
@@ -42,12 +38,10 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {error && <div className="error-message">{error}</div>}
+          {error && <div className="error-message" style={{ color: '#ef4444', textAlign: 'center', marginBottom: '16px' }}>{error}</div>}
 
           <div className="form-group">
-            <div className="form-label-row">
-              <label className="form-label">EMAIL ADDRESS</label>
-            </div>
+            <label className="form-label">EMAIL ADDRESS</label>
             <input
               type="email"
               className="auth-input"
@@ -61,7 +55,7 @@ const Login = () => {
           <div className="form-group">
             <div className="form-label-row">
               <label className="form-label">PASSWORD</label>
-              <Link to="/forgot-password" name="forgot" className="forgot-link">FORGOT?</Link>
+              <Link to="/forgot-password" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>FORGOT?</Link>
             </div>
             <div className="input-wrapper">
               <input
@@ -72,37 +66,37 @@ const Login = () => {
                 required
                 placeholder="••••••••"
               />
-              <div className="input-icon-right" onClick={() => setShowPassword(!showPassword)}>
+              <div className="input-icon-right-lux" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <FiEyeOff /> : <FiEye />}
               </div>
             </div>
           </div>
 
-          <button type="submit" className="auth-button" disabled={loading}>
+          <button type="submit" className="btn-auth-gold" disabled={loading}>
             {loading ? 'PROCESSING...' : 'ACCESS'}
           </button>
         </form>
 
-        <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register">Register</Link></p>
+        <div className="auth-footer-text">
+          <p>Don't have an account? <Link to="/register" className="auth-footer-link">Register</Link></p>
         </div>
       </div>
 
-      <div className="secured-badge">
+      <div className="secured-badge-lux">
         <FiShield />
         <span>SECURED BY SOVEREIGNTY PROTOCOLS</span>
       </div>
 
       <footer className="site-footer">
-        <div className="footer-container">
-          <div className="footer-left">
-            <span className="footer-logo">CHARITYHEAVY</span>
-            <span className="footer-copyright">© 2024 CHARITY HEAVY. THE SOVEREIGN IMPACT.</span>
+        <div className="footer-inner-lux">
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span className="footer-logo-lux">CHARITYHEAVY</span>
+            <span className="footer-copy-lux">© 2024 CHARITY HEAVY. THE SOVEREIGN IMPACT.</span>
           </div>
           <div className="footer-links">
-            <Link to="/privacy" className="footer-link">PRIVACY POLICY</Link>
-            <Link to="/terms" className="footer-link">TERMS OF SERVICE</Link>
-            <Link to="/contact" className="footer-link">CONTACT</Link>
+            <span>PRIVACY POLICY</span>
+            <span>TERMS OF SERVICE</span>
+            <span>CONTACT</span>
           </div>
         </div>
       </footer>

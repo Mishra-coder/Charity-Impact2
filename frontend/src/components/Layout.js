@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  FiHome, 
-  FiTrendingUp, 
-  FiAward, 
-  FiCreditCard, 
-  FiHeart,
-  FiUser
-} from 'react-icons/fi';
+import { FiUser } from 'react-icons/fi';
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -30,18 +23,21 @@ const Layout = ({ children }) => {
   };
 
   const links = [
-    { path: '/dashboard', label: 'DASHBOARD', icon: FiHome },
-    { path: '/scores', label: 'PERFORMANCE', icon: FiTrendingUp },
-    { path: '/draws', label: 'CHAMPIONSHIPS', icon: FiAward },
-    { path: '/subscription', label: 'SUBSCRIPTION', icon: FiCreditCard },
-    { path: '/charities', label: 'IMPACT', icon: FiHeart },
+    { path: '/dashboard', label: 'DASHBOARD' },
+    { path: '/scores', label: 'PERFORMANCE' },
+    { path: '/draws', label: 'CHAMPIONSHIPS' },
+    { path: '/subscription', label: 'SUBSCRIPTION' },
+    { path: '/charities', label: 'IMPACT' },
   ];
 
   return (
     <div className="layout-root">
       <nav className={`top-navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
         <div className="navbar-container">
-          <Link to="/dashboard" className="nav-logo-text">CHARITY HEAVY</Link>
+          <Link to="/dashboard" className="nav-logo-text">
+            <span className="logo-white">CHARITY</span>
+            <span className="logo-gold">HEAVY</span>
+          </Link>
 
           <div className="navbar-pill-container">
             {links.map((link) => {
@@ -52,16 +48,16 @@ const Layout = ({ children }) => {
                   to={link.path}
                   className={`navbar-link ${isActive ? 'active' : ''}`}
                 >
-                  <span>{link.label}</span>
+                  {link.label}
                 </Link>
               );
             })}
           </div>
 
           <div className="navbar-user" onClick={handleLogout}>
-            <span className="user-name-label">{user?.fullName?.toUpperCase() || 'Z PRIME'}</span>
+            <span className="user-name-label">{user?.fullName?.toUpperCase() || 'COMMANDER'}</span>
             <div className="navbar-avatar">
-              <FiUser style={{ fontSize: '20px', margin: '4px' }} />
+              <FiUser />
             </div>
           </div>
         </div>
@@ -74,7 +70,9 @@ const Layout = ({ children }) => {
       <footer className="site-footer">
         <div className="footer-container">
           <div className="footer-left">
-            <span className="footer-logo">CHARITY HEAVY</span>
+            <span className="footer-logo">
+              CHARITY<span className="logo-gold">HEAVY</span>
+            </span>
             <span className="footer-copyright">© 2024 CHARITY HEAVY. THE SOVEREIGN IMPACT.</span>
           </div>
           <div className="footer-links">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Layout from '../../components/Layout';
 import api from '../../utils/api';
+import { FiCheck, FiX, FiShield, FiFileText } from 'react-icons/fi';
 
 const AdminVerifications = () => {
   const [verifications, setVerifications] = useState([]);
@@ -15,125 +15,94 @@ const AdminVerifications = () => {
       const response = await api.get('/admin/verifications');
       setVerifications(response.data.data);
     } catch (error) {
-      setVerifications([]);
+      console.error('Failed to fetch audit requests');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerify = async (verificationId, status) => {
-    const notes = prompt('Enter admin notes (optional):');
+  const handleAction = async (id, status) => {
     try {
-      await api.put(`/admin/verifications/${verificationId}`, {
-        status,
-        adminNotes: notes || ''
-      });
+      await api.put(`/admin/verifications/${id}`, { status });
       fetchVerifications();
-      alert('Verification updated successfully');
     } catch (error) {
-      alert('Failed to update verification');
+      alert('Action failed');
     }
   };
 
   if (loading) {
     return (
-      <Layout>
-        <div className="auth-container" style={{ minHeight: '60vh' }}>
-          <div className="step-bar active" style={{ width: '60px', animation: 'pulse 1.5s infinite' }}></div>
-        </div>
-      </Layout>
+      <div className="flex justify-center mt-32">
+        <div className="step-bar active" style={{ width: '60px' }}></div>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="dashboard-container">
-        <header className="dashboard-hero">
-          <h1 className="hero-title">Audit Queue</h1>
-          <p className="hero-subtitle">WINNER VERIFICATION • ASSET AUTHORIZATION</p>
-        </header>
+    <div className="admin-verifications-container">
+      <div className="momentum-header">
+        <h2 className="node-title">Audit Protocol Requests</h2>
+        <span className="status-glow-badge"><div className="status-dot green"></div> SYNC ACTIVE</span>
+      </div>
 
-        <div className="charity-card-wrapper" style={{ gridTemplateColumns: '1fr' }}>
-          {verifications.length > 0 ? (
-            verifications.map((verification) => (
-              <div key={verification.id} className="repository-card" style={{ padding: '32px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <h3 className="node-title" style={{ fontSize: '20px' }}>{verification.users?.full_name}</h3>
-                    <p className="hero-subtitle" style={{ fontSize: '14px', textAlign: 'left' }}>{verification.users?.email}</p>
-                  </div>
-                  <div className="status-glow-badge">
-                    <div className={`status-dot ${verification.status === 'approved' ? 'green' : verification.status === 'rejected' ? 'red' : 'yellow'}`} 
-                         style={{ background: verification.status === 'approved' ? '#10b981' : verification.status === 'rejected' ? '#ef4444' : '#FAC441' }}></div>
-                    {verification.status?.toUpperCase()}
-                  </div>
-                </div>
+      <div className="charity-card-wrapper" style={{ gridTemplateColumns: '1fr' }}>
+        {verifications.map((verification) => (
+          <div key={verification.id} className="repository-card admin-verif-card-padding">
+            <div className="admin-verif-header">
+              <div className="flex-column gap-4">
+                <h3 className="node-title" style={{ fontSize: '20px' }}>{verification.users?.full_name}</h3>
+                <p className="hero-subtitle" style={{ fontSize: '14px', textAlign: 'left' }}>{verification.users?.email}</p>
+              </div>
+              <div className="flex align-center gap-12">
+                <div className={`status-dot ${verification.status === 'approved' ? 'status-dot-approved' : verification.status === 'rejected' ? 'status-dot-rejected' : 'status-dot-pending'}`} 
+                     style={{ width: '12px', height: '12px', borderRadius: '50%' }}></div>
+                <span className="sync-status-tag">{verification.status.toUpperCase()}</span>
+              </div>
+            </div>
 
-                <div className="charity-stats-row-lux" style={{ margin: '24px 0', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '24px' }}>
-                   <div>
-                      <div className="stat-label-tiny">CHAMPIONSHIP</div>
-                      <div className="stat-val-main" style={{ fontSize: '18px' }}>
-                        {verification.draws?.draw_type?.toUpperCase()} • {new Date(verification.draws?.draw_date).toLocaleDateString()}
-                      </div>
-                   </div>
-                   <div>
-                      <div className="stat-label-tiny">REWARD SIZE</div>
-                      <div className="stat-val-main" style={{ fontSize: '24px', color: '#FAC441' }}>${verification.draws?.total_prize_pool}</div>
-                   </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: '300px' }}>
-                    <div className="stat-label-tiny" style={{ marginBottom: '12px' }}>VERIFICATION PAYLOAD</div>
-                    <a
-                      href={verification.screenshot_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-boost"
-                      style={{ textDecoration: 'none', display: 'inline-block' }}
-                    >
-                      VIEW SCREENSHOT
+            <div className="admin-verif-divider">
+              <div className="flex justify-between align-center">
+                <div className="flex align-center gap-16">
+                  <div className="charity-icon-box bg-info-subtle"><FiFileText /></div>
+                  <div>
+                    <p className="ps-label">PROOF DOCUMENT</p>
+                    <a href={verification.proof_url} target="_blank" rel="noopener noreferrer" className="auth-footer-link" style={{ fontSize: '14px' }}>
+                      Audit-Proof-Node-{verification.id.slice(0,8)}.pdf
                     </a>
                   </div>
-
-                  {verification.admin_notes && (
-                    <div style={{ flex: 1, minWidth: '300px' }}>
-                      <div className="stat-label-tiny" style={{ marginBottom: '12px' }}>ADMINISTRATIVE NOTES</div>
-                      <p className="node-desc" style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>{verification.admin_notes}</p>
-                    </div>
-                  )}
                 </div>
 
                 {verification.status === 'pending' && (
-                  <div style={{ display: 'flex', gap: '16px', marginTop: '32px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '32px' }}>
-                    <button
-                      onClick={() => handleVerify(verification.id, 'approved')}
-                      className="btn-add-gold"
-                      style={{ flex: 1 }}
+                  <div className="flex gap-12">
+                    <button 
+                      onClick={() => handleAction(verification.id, 'rejected')}
+                      className="btn-impact-view" 
+                      style={{ width: 'auto', padding: '12px 24px', color: '#ef4444' }}
                     >
-                      AUTHORIZE
+                      <FiX /> REJECT
                     </button>
-                    <button
-                      onClick={() => handleVerify(verification.id, 'rejected')}
-                      className="btn-boost"
-                      style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: '#ef4444' }}
+                    <button 
+                      onClick={() => handleAction(verification.id, 'approved')}
+                      className="btn-add-gold" 
+                      style={{ padding: '12px 24px' }}
                     >
-                      REJECT
+                      <FiCheck /> APPROVE
                     </button>
                   </div>
                 )}
               </div>
-            ))
-          ) : (
-            <div className="empty-zone-lux">
-              <div className="empty-icon-lux">∅</div>
-              <h2 className="empty-title">Queue Synchronized</h2>
-              <p className="empty-desc">No pending verifications found in the system.</p>
             </div>
-          )}
-        </div>
+          </div>
+        ))}
+
+        {verifications.length === 0 && (
+          <div className="repository-card repository-card-center">
+            <FiShield className="icon-success-large" style={{ opacity: 0.1 }} />
+            <p className="node-desc">No pending audit requests detected.</p>
+          </div>
+        )}
       </div>
-    </Layout>
+    </div>
   );
 };
 

@@ -3,9 +3,8 @@ import Layout from '../components/Layout';
 import api from '../utils/api';
 import { 
   FiPlus, 
-  FiAward, 
-  FiZap, 
   FiActivity,
+  FiTrendingUp,
   FiCalendar
 } from 'react-icons/fi';
 
@@ -60,6 +59,8 @@ const Scores = () => {
     ? Math.max(...scores.map(s => s.score_value))
     : '0';
 
+  if (loading) return <div className="loading-lux">INITIALIZING SYSTEM...</div>;
+
   return (
     <Layout>
       <div className="dashboard-container">
@@ -75,19 +76,19 @@ const Scores = () => {
 
         <div className="perf-stats-row">
           <div className="perf-stat-card gold">
-            <span className="stat-label-tiny">AVERAGE SCORE</span>
+            <span className="hero-subtitle">AVERAGE SCORE</span>
             <div className="stat-val-main">{avgScore}</div>
             <span className="stat-desc-small">STABLEFORD PERFORMANCE PEAK</span>
           </div>
 
           <div className="perf-stat-card green">
-            <span className="stat-label-tiny">BEST PERFORMANCE</span>
+            <span className="hero-subtitle">BEST PERFORMANCE</span>
             <div className="stat-val-main">{bestScore}</div>
             <span className="stat-desc-small">SEASON RECORD DETECTED</span>
           </div>
 
           <div className="perf-stat-card gray">
-            <span className="stat-label-tiny">LAST ROUND</span>
+            <span className="hero-subtitle">LAST ROUND</span>
             <div className="stat-val-main">{scores[0]?.score_value || 'N/A'}</div>
             <span className="stat-desc-small">SYNCED ON {scores[0] ? new Date(scores[0].score_date).toLocaleDateString() : 'NO DATA'}</span>
           </div>
@@ -108,67 +109,61 @@ const Scores = () => {
                 </div>
               ))}
               {scores.length === 0 && (
-                <div className="empty-repository" style={{ padding: '40px' }}>
+                <div className="repository-card chart-placeholder-lux" style={{ textAlign: 'center' }}>
                   <FiActivity style={{ fontSize: '32px', color: 'rgba(255,255,255,0.1)', marginBottom: '16px' }} />
-                  <p className="empty-desc">No performance records detected in this cycle.</p>
+                  <p className="node-desc">No performance records detected in this cycle.</p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="momentum-column">
-            <div className="momentum-card">
-              <div className="momentum-header">
-                <h3 className="card-title">Impact Momentum</h3>
-                <div className="momentum-legend">
-                  <div className="legend-dot"></div>
-                  <span>SCORE SYNC</span>
-                </div>
+            <div className="momentum-header">
+              <h3 className="node-title">Impact Momentum</h3>
+              <div className="momentum-legend">
+                <div className="legend-dot"></div>
+                <span>SCORE SYNC</span>
               </div>
+            </div>
 
-              <div className="chart-area">
+            <div className="chart-placeholder-lux">
+              <div className="chart-bar-container">
                 {scores.slice(0, 7).reverse().map((s, i) => (
-                  <div key={s.id} className="chart-bar-group">
-                    <div className="chart-bar" style={{ height: '180px' }}>
-                      <div className="chart-bar-fill" style={{ height: `${(s.score_value / 45) * 100}%` }}></div>
-                    </div>
-                    <span className="chart-date">{new Date(s.score_date).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })}</span>
-                  </div>
+                  <div key={i} className="chart-bar-lux active" style={{ height: `${(s.score_value / 45) * 100}%` }}></div>
                 ))}
               </div>
-
-              <form id="score-form" onSubmit={handleAddScore} style={{ marginTop: '40px' }}>
-                <h3 className="card-title" style={{ marginBottom: '24px' }}>Log Performance</h3>
-                {error && <div className="error-message" style={{ marginBottom: '16px' }}>{error}</div>}
-                <div className="form-group">
-                  <label className="form-label">STABLEFORD SCORE (1-45)</label>
-                  <input
-                    type="number"
-                    className="auth-input"
-                    value={scoreValue}
-                    onChange={(e) => setScoreValue(e.target.value)}
-                    required
-                    placeholder="Enter Score"
-                    min="1"
-                    max="45"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">DATE OF PERFORMANCE</label>
-                  <input
-                    type="date"
-                    className="auth-input"
-                    value={scoreDate}
-                    onChange={(e) => setScoreDate(e.target.value)}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn-add-round-full" disabled={isSubmitting}>
-                  <FiPlus /> {isSubmitting ? 'SYNCING...' : 'ADD PERFORMANCE RECORD'}
-                </button>
-                <span className="perf-footer-note">ALL DATA IS VERIFIED VIA SOVEREIGN PROTOCOLS</span>
-              </form>
             </div>
+
+            <form id="score-form" onSubmit={handleAddScore}>
+              <h3 className="node-title" style={{ marginBottom: '24px' }}>Log Performance</h3>
+              {error && <div className="error-message" style={{ color: '#ef4444', marginBottom: '16px', fontSize: '13px' }}>{error}</div>}
+              <div className="form-group">
+                <label className="form-label">STABLEFORD SCORE (1-45)</label>
+                <input
+                  type="number"
+                  className="auth-input"
+                  value={scoreValue}
+                  onChange={(e) => setScoreValue(e.target.value)}
+                  required
+                  placeholder="Enter Score"
+                  min="1"
+                  max="45"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">DATE OF PERFORMANCE</label>
+                <input
+                  type="date"
+                  className="auth-input"
+                  value={scoreDate}
+                  onChange={(e) => setScoreDate(e.target.value)}
+                  required
+                />
+              </div>
+              <button type="submit" className="btn-add-round-full" disabled={isSubmitting}>
+                {isSubmitting ? 'SYNCING...' : 'ADD PERFORMANCE RECORD'}
+              </button>
+            </form>
           </div>
         </div>
       </div>
