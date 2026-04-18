@@ -1,0 +1,49 @@
+# Dependencies
+node_modules
+backend/node_modules
+frontend/node_modules
+
+# Environment files (will be set in Vercel dashboard)
+.env
+.env.local
+.env.development
+.env.production
+backend/.env
+frontend/.env
+
+# Development files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Testing
+coverage
+.nyc_output
+
+# Build (will be built on Vercel)
+frontend/build
+frontend/.cache
+
+# Documentation (optional - remove if you want to include)
+README.md
+DEPLOYMENT.md
+
+# Database
+database/
+*.sql

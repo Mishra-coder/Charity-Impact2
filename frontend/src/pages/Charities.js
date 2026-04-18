@@ -10,7 +10,6 @@ import {
 } from 'react-icons/fi';
 
 const Charities = () => {
-  const [charities, setCharities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,8 +18,7 @@ const Charities = () => {
 
   const fetchCharities = async () => {
     try {
-      const response = await api.get('/charities');
-      setCharities(response.data.data);
+      await api.get('/charities');
     } catch (error) {
       console.error('Failed to sync charity network');
     } finally {

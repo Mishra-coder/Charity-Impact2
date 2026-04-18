@@ -303,6 +303,40 @@ REACT_APP_API_URL=http://localhost:5001/api
 - Role-based access control
 - Secure environment variables
 
+## Deployment
+
+### Vercel पर Deploy करना
+
+इस project को Vercel पर deploy करने के लिए detailed guide देखें: [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+#### Quick Deploy Steps:
+
+1. **Vercel CLI Install करें**:
+```bash
+npm install -g vercel
+```
+
+2. **Deploy Script Run करें**:
+```bash
+./deploy.sh
+```
+
+या manually:
+```bash
+vercel          # Preview deployment
+vercel --prod   # Production deployment
+```
+
+3. **Environment Variables Set करें** Vercel Dashboard में:
+   - Backend: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `JWT_SECRET`, etc.
+   - Frontend: `REACT_APP_API_URL`
+
+4. **Verify Deployment**:
+   - Frontend: https://your-app.vercel.app
+   - Backend API: https://your-app.vercel.app/api/charities
+
+पूरी deployment guide के लिए [DEPLOYMENT.md](./DEPLOYMENT.md) देखें।
+
 ## Author
 
 Devendra Mishra  

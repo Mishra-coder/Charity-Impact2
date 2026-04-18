@@ -4,13 +4,11 @@ import api from '../utils/api';
 import { 
   FiCheck, 
   FiStar, 
-  FiShield, 
   FiZap,
   FiArrowRight
 } from 'react-icons/fi';
 
 const Subscription = () => {
-  const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,8 +17,7 @@ const Subscription = () => {
 
   const fetchPlans = async () => {
     try {
-      const response = await api.get('/subscriptions/plans');
-      setPlans(response.data.data);
+      await api.get('/subscriptions/plans');
     } catch (error) {
        console.error('Plan sync failed');
     } finally {

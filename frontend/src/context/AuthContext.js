@@ -17,25 +17,25 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      fetchUser();
-    } else {
-      setLoading(false);
-    }
+    const loadUser = async () => {
+      if (token) {
+        try {
+          const response = await axios.get(`${process.env.REACT_APP_API_URL}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setUser(response.data.data);
+        } catch (error) {
+          logout();
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+    loadUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
-
-  const fetchUser = async () => {
-    try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUser(response.data.data);
-    } catch (error) {
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const login = async (email, password) => {
     const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, {

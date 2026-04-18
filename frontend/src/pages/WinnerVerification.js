@@ -4,7 +4,6 @@ import api from '../utils/api';
 import { 
   FiUploadCloud, 
   FiCheckCircle, 
-  FiAlertCircle,
   FiArrowRight,
   FiShield
 } from 'react-icons/fi';

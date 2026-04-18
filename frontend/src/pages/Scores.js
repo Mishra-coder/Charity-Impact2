@@ -3,9 +3,7 @@ import Layout from '../components/Layout';
 import api from '../utils/api';
 import { 
   FiPlus, 
-  FiActivity,
-  FiTrendingUp,
-  FiCalendar
+  FiActivity
 } from 'react-icons/fi';
 
 const Scores = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import api from '../../utils/api';
-import { FiPlus, FiX, FiGlobe, FiHeart } from 'react-icons/fi';
+import { FiPlus, FiGlobe, FiHeart } from 'react-icons/fi';
 
 const AdminCharities = () => {
   const [charities, setCharities] = useState([]);

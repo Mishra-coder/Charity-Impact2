@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../utils/api';
-import { 
-  FiAward, 
-  FiClock, 
-  FiUsers, 
-  FiTrendingUp,
-  FiZap,
-  FiCheckCircle
-} from 'react-icons/fi';
+import 'react-icons/fi';
 
 const Draws = () => {
   const [pools, setPools] = useState([]);

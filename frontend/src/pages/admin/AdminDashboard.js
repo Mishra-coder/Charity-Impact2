@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link, Routes, Route, useNavigate } from 'react-router-dom';
+import { NavLink, Routes, Route, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { 
   FiGrid, 
@@ -10,9 +10,7 @@ import {
   FiLogOut,
   FiMenu,
   FiX,
-  FiTrendingUp,
-  FiActivity,
-  FiSettings
+  FiTrendingUp
 } from 'react-icons/fi';
 
 import AdminUsers from './AdminUsers';
