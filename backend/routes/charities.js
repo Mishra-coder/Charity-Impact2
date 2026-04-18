@@ -78,4 +78,38 @@ router.get('/stats', authenticate, async (req, res) => {
   }
 });
 
+router.post('/donate', authenticate, async (req, res) => {
+  try {
+    const { charityId, amount } = req.body;
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'gbp',
+          product_data: {
+            name: 'Independent Impact Donation',
+          },
+          unit_amount: amount * 100,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${process.env.FRONTEND_URL}/impact?status=success`,
+      cancel_url: `${process.env.FRONTEND_URL}/impact`,
+      metadata: {
+        userId: req.user.id,
+        type: 'independent',
+        charityId,
+        amount
+      }
+    });
+
+    res.json({ success: true, url: session.url });
+  } catch (error) {
+    res.status(500).json({ error: { message: 'Failed to initiate donation' } });
+  }
+});
+
 module.exports = router;

@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../utils/api';
-import './Dashboard.css';
+import { FiCheck, FiDownload } from 'react-icons/fi';
 
 const Subscription = () => {
   const [subscription, setSubscription] = useState(null);
-  const [charities, setCharities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showSubscribeForm, setShowSubscribeForm] = useState(false);
-  const [formData, setFormData] = useState({
-    planType: 'monthly',
-    charityId: '',
-    charityPercentage: 10
-  });
+  const [billingCycle, setBillingCycle] = useState('monthly');
 
   useEffect(() => {
     fetchData();
@@ -20,317 +14,138 @@ const Subscription = () => {
 
   const fetchData = async () => {
     try {
-      const [subResponse, charResponse] = await Promise.all([
-        api.get('/subscriptions/me'),
-        api.get('/charities')
-      ]);
-      setSubscription(subResponse.data.data);
-      setCharities(charResponse.data.data);
+      const response = await api.get('/subscriptions/me');
+      setSubscription(response.data.data);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      setSubscription(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubscribe = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.charityId) {
-      alert('Please select a charity');
-      return;
-    }
-
-    try {
-      await api.post('/subscriptions', formData);
-      setShowSubscribeForm(false);
-      fetchData();
-      alert('Subscription created successfully!');
-    } catch (error) {
-      alert(error.response?.data?.error?.message || 'Failed to create subscription');
-    }
-  };
-
   const handleCancel = async () => {
-    if (!window.confirm('Are you sure you want to cancel your subscription?')) {
-      return;
-    }
-
+    if (!window.confirm('Are you sure you want to cancel your subscription?')) return;
     try {
       await api.post('/subscriptions/cancel');
       fetchData();
-      alert('Subscription cancelled successfully');
     } catch (error) {
-      alert('Failed to cancel subscription');
+      console.error('Failed to cancel subscription');
     }
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
   };
 
   if (loading) {
     return (
       <Layout>
-        <div className="loading">Loading...</div>
+        <div className="auth-container" style={{ minHeight: '60vh' }}>
+          <div className="step-bar active" style={{ width: '60px', animation: 'pulse 1.5s infinite' }}></div>
+        </div>
       </Layout>
     );
   }
 
+  const mockInvoices = [
+    { id: 1, date: 'Sep 24, 2024', desc: 'Explorer Monthly Subscription', amount: '£100.00', status: 'PAID' },
+    { id: 2, date: 'Aug 24, 2024', desc: 'Explorer Monthly Subscription', amount: '£100.00', status: 'PAID' },
+    { id: 3, date: 'Jul 24, 2024', desc: 'Explorer Monthly Subscription', amount: '£100.00', status: 'PAID' },
+  ];
+
   return (
     <Layout>
-      <div className="dashboard">
-        <h1 className="page-title">Subscription</h1>
+      <div className="dashboard-container">
+        <header className="dashboard-hero">
+          <h1 className="hero-title">Charity Heavy Membership</h1>
+          <p className="hero-subtitle">SOVEREIGN ACCESS • IMPACT CONTROL CENTER</p>
+          <p className="hero-desc-tiny" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', maxWidth: '600px', marginTop: '12px' }}>
+            Manage your impact tier and subscription settings. Your contribution fuels global change through sovereign sport excellence.
+          </p>
+        </header>
 
-        {subscription ? (
-          <div>
-            <div className="dashboard-section">
-              <h2 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '600' }}>Current Plan</h2>
-              <div style={{ display: 'grid', gap: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <p style={{ fontSize: '24px', fontWeight: '700', color: '#1f2937', margin: 0 }}>
-                      {subscription.plan_type === 'monthly' ? 'Monthly' : 'Yearly'} Plan
-                    </p>
-                    <p style={{ color: '#6b7280', margin: '4px 0 0 0' }}>
-                      ${subscription.amount} / {subscription.plan_type === 'monthly' ? 'month' : 'year'}
-                    </p>
-                  </div>
-                  <span style={{
-                    padding: '6px 16px',
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    textTransform: 'capitalize',
-                    background: subscription.status === 'active' ? '#dcfce7' : '#fee2e2',
-                    color: subscription.status === 'active' ? '#16a34a' : '#dc2626'
-                  }}>
-                    {subscription.status}
-                  </span>
-                </div>
-
-                <div style={{ paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#6b7280' }}>Start Date:</span>
-                      <span style={{ fontWeight: '500' }}>
-                        {new Date(subscription.start_date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#6b7280' }}>End Date:</span>
-                      <span style={{ fontWeight: '500' }}>
-                        {new Date(subscription.end_date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#6b7280' }}>Next Renewal:</span>
-                      <span style={{ fontWeight: '500' }}>
-                        {new Date(subscription.renewal_date).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {subscription.status === 'active' && (
-                  <button
-                    onClick={handleCancel}
-                    style={{
-                      padding: '10px 20px',
-                      background: '#dc2626',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      marginTop: '16px'
-                    }}
-                  >
-                    Cancel Subscription
-                  </button>
-                )}
+        <div className="current-plan-card-lux" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '32px', marginBottom: '48px', borderLeft: '4px solid #2D6A4F' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '24px' }}>
+            <div style={{ flex: 1, minWidth: '300px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <span className="stat-label-tiny" style={{ color: '#FAC441', fontSize: '10px', fontWeight: '800' }}>CURRENT PLAN</span>
+                <span className="status-pill-active" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '4px 12px', borderRadius: '99px', fontSize: '10px', fontWeight: '700' }}>ACTIVE</span>
               </div>
+              <h2 className="node-title" style={{ fontSize: '28px', fontWeight: '900', marginBottom: '8px' }}>Explorer Monthly</h2>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>Next billing date: <span style={{ color: '#FFFFFF', fontWeight: '700' }}>October 24, 2024</span></p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '40px', fontWeight: '900', color: '#FFFFFF' }}>£100<span style={{ fontSize: '20px', opacity: 0.4 }}>/mo</span></div>
+              <button onClick={handleCancel} style={{ background: 'transparent', border: 'none', color: '#ef4444', fontWeight: '700', cursor: 'pointer', marginTop: '12px', fontSize: '12px' }}>Cancel Subscription</button>
             </div>
           </div>
-        ) : (
-          <div>
-            {!showSubscribeForm ? (
-              <div className="dashboard-section">
-                <h2 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '600' }}>Choose Your Plan</h2>
-                <p style={{ color: '#6b7280', marginBottom: '24px' }}>
-                  Subscribe to track your scores, enter prize draws, and support charities.
-                </p>
+        </div>
 
-                <div style={{ display: 'grid', gap: '16px', maxWidth: '600px' }}>
-                  <div style={{
-                    padding: '24px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '12px',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => {
-                    setFormData({ ...formData, planType: 'monthly' });
-                    setShowSubscribeForm(true);
-                  }}>
-                    <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 8px 0' }}>Monthly Plan</h3>
-                    <p style={{ fontSize: '32px', fontWeight: '700', color: '#2563eb', margin: '0 0 8px 0' }}>
-                      $100<span style={{ fontSize: '16px', fontWeight: '400', color: '#6b7280' }}>/month</span>
-                    </p>
-                    <ul style={{ color: '#6b7280', paddingLeft: '20px', margin: '16px 0 0 0' }}>
-                      <li>Track unlimited golf scores</li>
-                      <li>Enter monthly prize draws</li>
-                      <li>Support your chosen charity</li>
-                      <li>Access to all features</li>
-                    </ul>
-                  </div>
-
-                  <div style={{
-                    padding: '24px',
-                    border: '2px solid #2563eb',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    position: 'relative'
-                  }}
-                  onClick={() => {
-                    setFormData({ ...formData, planType: 'yearly' });
-                    setShowSubscribeForm(true);
-                  }}>
-                    <span style={{
-                      position: 'absolute',
-                      top: '-12px',
-                      right: '24px',
-                      padding: '4px 12px',
-                      background: '#2563eb',
-                      color: 'white',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      Save $200
-                    </span>
-                    <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 8px 0' }}>Yearly Plan</h3>
-                    <p style={{ fontSize: '32px', fontWeight: '700', color: '#2563eb', margin: '0 0 8px 0' }}>
-                      $1000<span style={{ fontSize: '16px', fontWeight: '400', color: '#6b7280' }}>/year</span>
-                    </p>
-                    <ul style={{ color: '#6b7280', paddingLeft: '20px', margin: '16px 0 0 0' }}>
-                      <li>All monthly plan features</li>
-                      <li>2 months free</li>
-                      <li>Priority support</li>
-                      <li>Exclusive yearly draws</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="dashboard-section">
-                <h2 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '600' }}>Complete Your Subscription</h2>
-                <form onSubmit={handleSubscribe}>
-                  <div style={{ display: 'grid', gap: '16px', maxWidth: '500px' }}>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                        Selected Plan
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.planType === 'monthly' ? 'Monthly - $100/month' : 'Yearly - $1000/year'}
-                        disabled
-                        style={{
-                          width: '100%',
-                          padding: '10px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          background: '#f9fafb'
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                        Choose Charity
-                      </label>
-                      <select
-                        name="charityId"
-                        value={formData.charityId}
-                        onChange={handleChange}
-                        required
-                        style={{
-                          width: '100%',
-                          padding: '10px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '14px'
-                        }}
-                      >
-                        <option value="">Select a charity</option>
-                        {charities.map(charity => (
-                          <option key={charity.id} value={charity.id}>
-                            {charity.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                        Charity Contribution ({formData.charityPercentage}%)
-                      </label>
-                      <input
-                        type="range"
-                        name="charityPercentage"
-                        value={formData.charityPercentage}
-                        onChange={handleChange}
-                        min="10"
-                        max="100"
-                        step="5"
-                        style={{ width: '100%' }}
-                      />
-                      <p style={{ color: '#6b7280', fontSize: '14px', margin: '8px 0 0 0' }}>
-                        ${((formData.planType === 'monthly' ? 100 : 1000) * formData.charityPercentage / 100).toFixed(2)} will go to your chosen charity
-                      </p>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                      <button
-                        type="submit"
-                        style={{
-                          flex: 1,
-                          padding: '12px 20px',
-                          background: '#2563eb',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontWeight: '600'
-                        }}
-                      >
-                        Subscribe Now
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowSubscribeForm(false)}
-                        style={{
-                          padding: '12px 20px',
-                          background: '#f3f4f6',
-                          color: '#374151',
-                          border: 'none',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontWeight: '600'
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            )}
+        <div className="billing-section-lux">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+            <h2 className="section-label-bold" style={{ fontSize: '20px' }}>Available Plans</h2>
+            <div className="plan-toggle-container" style={{ background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '12px', display: 'flex' }}>
+              <button className={`plan-toggle-btn ${billingCycle === 'monthly' ? 'active' : ''}`} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: billingCycle === 'monthly' ? 'rgba(255,255,255,0.1)' : 'transparent', color: '#FFF', cursor: 'pointer', fontSize: '12px' }} onClick={() => setBillingCycle('monthly')}>Monthly</button>
+              <button className={`plan-toggle-btn ${billingCycle === 'yearly' ? 'active' : ''}`} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: billingCycle === 'yearly' ? 'rgba(255,255,255,0.1)' : 'transparent', color: '#FFF', cursor: 'pointer', fontSize: '12px' }} onClick={() => setBillingCycle('yearly')}>Yearly</button>
+            </div>
           </div>
-        )}
+
+          <div className="membership-grid-lux">
+            <div className="plan-card-lux" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '32px', opacity: 0.8 }}>
+              <h3 className="node-title" style={{ fontSize: '22px', marginBottom: '12px' }}>Explorer</h3>
+              <p style={{ color: 'var(--color-muted)', fontSize: '14px', marginBottom: '24px' }}>Essential impact and dashboard access.</p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0' }}>
+                <li style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><FiCheck style={{ color: '#2D6A4F' }}/> Standard Dashboard Metrics</li>
+                <li style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><FiCheck style={{ color: '#2D6A4F' }}/> Digital Impact Certificate</li>
+                <li style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '0', display: 'flex', alignItems: 'center', gap: '8px' }}><FiCheck style={{ color: '#2D6A4F' }}/> Monthly Impact Report</li>
+              </ul>
+              <button className="btn-boost" style={{ width: '100%', cursor: 'default', opacity: 0.5 }}>Current Plan</button>
+            </div>
+
+            <div className="plan-card-lux" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #FAC441', borderRadius: '24px', padding: '32px', position: 'relative' }}>
+              <span style={{ position: 'absolute', top: '16px', right: '16px', background: '#FAC441', color: '#000', padding: '4px 12px', borderRadius: '99px', fontSize: '10px', fontWeight: '900' }}>ELITE</span>
+              <h3 className="node-title" style={{ fontSize: '22px', marginBottom: '12px' }}>Annual Champion</h3>
+              <p style={{ color: 'var(--color-muted)', fontSize: '14px', marginBottom: '24px' }}>Premium access with maximum leverage.</p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0' }}>
+                <li style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><FiCheck style={{ color: '#FAC441' }}/> All Explorer Features</li>
+                <li style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><FiCheck style={{ color: '#FAC441' }}/> Priority Championship Entry</li>
+                <li style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><FiCheck style={{ color: '#FAC441' }}/> VIP Impact Lounge Access</li>
+              </ul>
+              <div style={{ marginBottom: '32px' }}>
+                <span style={{ fontSize: '32px', fontWeight: '900' }}>£1,000</span>
+                <span style={{ opacity: 0.4, fontSize: '16px' }}>/year</span>
+              </div>
+              <button className="btn-add-gold" style={{ width: '100%' }}>Upgrade to Annual</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="billing-section-lux" style={{ marginTop: '80px' }}>
+          <h2 className="section-label-bold" style={{ fontSize: '24px', marginBottom: '24px' }}>Billing History</h2>
+          <table className="billing-table-lux">
+            <thead>
+              <tr>
+                <th>DATE</th>
+                <th>DESCRIPTION</th>
+                <th>AMOUNT</th>
+                <th>STATUS</th>
+                <th style={{ textAlign: 'right' }}>INVOICE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mockInvoices.map(inv => (
+                <tr key={inv.id} className="billing-row-lux">
+                  <td style={{ color: 'rgba(255,255,255,0.7)' }}>{inv.date}</td>
+                  <td style={{ fontWeight: '800' }}>{inv.desc}</td>
+                  <td>{inv.amount}</td>
+                  <td>
+                    <span className="status-paid-lux">PAID</span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <FiDownload style={{ cursor: 'pointer', fontSize: '18px', opacity: 0.6 }}/>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <a href="#" className="view-all-link">VIEW ALL INVOICES</a>
+        </div>
       </div>
     </Layout>
   );

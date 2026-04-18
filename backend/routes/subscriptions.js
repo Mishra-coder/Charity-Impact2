@@ -51,62 +51,33 @@ router.post('/', [
     const monthlyPrice = 100;
     const yearlyPrice = 1000;
     const amount = planType === 'monthly' ? monthlyPrice : yearlyPrice;
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'gbp',
+          product_data: {
+            name: `${planType === 'monthly' ? 'Explorer' : 'Annual'} Membership`,
+          },
+          unit_amount: amount * 100,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${process.env.FRONTEND_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/subscription`,
+      metadata: {
+        userId: req.user.id,
+        planType,
+        charityId,
+        charityPercentage
+      }
+    });
 
-    const startDate = new Date();
-    const endDate = new Date();
-    if (planType === 'monthly') {
-      endDate.setMonth(endDate.getMonth() + 1);
-    } else {
-      endDate.setFullYear(endDate.getFullYear() + 1);
-    }
-
-    const { data: subscription, error: subError } = await supabase
-      .from('subscriptions')
-      .insert([{
-        user_id: req.user.id,
-        plan_type: planType,
-        status: 'active',
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        renewal_date: endDate.toISOString(),
-        amount
-      }])
-      .select()
-      .single();
-
-    if (subError) {
-      return res.status(500).json({ error: { message: 'Failed to create subscription' } });
-    }
-
-    await supabase
-      .from('users')
-      .update({ role: 'subscriber' })
-      .eq('id', req.user.id);
-
-    const charityAmount = (amount * charityPercentage) / 100;
-    await supabase
-      .from('charity_contributions')
-      .insert([{
-        user_id: req.user.id,
-        charity_id: charityId,
-        subscription_id: subscription.id,
-        percentage: charityPercentage,
-        amount: charityAmount
-      }]);
-
-    await supabase
-      .from('payments')
-      .insert([{
-        user_id: req.user.id,
-        subscription_id: subscription.id,
-        amount,
-        status: 'completed',
-        payment_method: 'stripe'
-      }]);
-
-    res.status(201).json({ success: true, data: subscription });
+    res.json({ success: true, url: session.url });
   } catch (error) {
-    res.status(500).json({ error: { message: 'Server error' } });
+    res.status(500).json({ error: { message: 'Failed to initiate payment' } });
   }
 });
 

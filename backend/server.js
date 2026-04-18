@@ -24,6 +24,7 @@ app.use('/api/scores', require('./routes/scores'));
 app.use('/api/charities', require('./routes/charities'));
 app.use('/api/draws', require('./routes/draws'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/webhooks', require('./routes/webhooks'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

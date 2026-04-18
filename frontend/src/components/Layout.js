@@ -1,95 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FiHome, FiTrendingUp, FiAward, FiCreditCard, FiHeart, FiMenu, FiX, FiLogOut, FiUsers, FiSettings } from 'react-icons/fi';
-import './Layout.css';
+import { 
+  FiHome, 
+  FiTrendingUp, 
+  FiAward, 
+  FiCreditCard, 
+  FiHeart,
+  FiUser
+} from 'react-icons/fi';
 
 const Layout = ({ children }) => {
-  const { user, logout, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const userLinks = [
-    { path: '/dashboard', icon: FiHome, label: 'Dashboard' },
-    { path: '/scores', icon: FiTrendingUp, label: 'Scores' },
-    { path: '/draws', icon: FiAward, label: 'Draws' },
-    { path: '/subscription', icon: FiCreditCard, label: 'Subscription' },
-    { path: '/charities', icon: FiHeart, label: 'Charities' }
+  const links = [
+    { path: '/dashboard', label: 'DASHBOARD', icon: FiHome },
+    { path: '/scores', label: 'PERFORMANCE', icon: FiTrendingUp },
+    { path: '/draws', label: 'CHAMPIONSHIPS', icon: FiAward },
+    { path: '/subscription', label: 'SUBSCRIPTION', icon: FiCreditCard },
+    { path: '/charities', label: 'IMPACT', icon: FiHeart },
   ];
-
-  const adminLinks = [
-    { path: '/admin', icon: FiHome, label: 'Dashboard' },
-    { path: '/admin/users', icon: FiUsers, label: 'Users' },
-    { path: '/admin/draws', icon: FiAward, label: 'Draws' },
-    { path: '/admin/verifications', icon: FiSettings, label: 'Verifications' },
-    { path: '/admin/charities', icon: FiHeart, label: 'Charities' }
-  ];
-
-  const links = isAdmin ? adminLinks : userLinks;
 
   return (
-    <div className="layout">
-      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h1 className="logo">GolfPro</h1>
-          <button className="close-btn" onClick={() => setSidebarOpen(false)}>
-            <FiX />
-          </button>
-        </div>
+    <div className="layout-root">
+      <nav className={`top-navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
+        <div className="navbar-container">
+          <Link to="/dashboard" className="nav-logo-text">CHARITY HEAVY</Link>
 
-        <nav className="sidebar-nav">
-          {links.map((link) => {
-            const Icon = link.icon;
-            const isActive = location.pathname === link.path;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`nav-link ${isActive ? 'active' : ''}`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Icon />
-                <span>{link.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+          <div className="navbar-pill-container">
+            {links.map((link) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`navbar-link ${isActive ? 'active' : ''}`}
+                >
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </div>
 
-        <div className="sidebar-footer">
-          <div className="user-info">
-            <div className="user-avatar">{user?.fullName?.charAt(0) || 'U'}</div>
-            <div className="user-details">
-              <div className="user-name">{user?.fullName}</div>
-              <div className="user-role">{user?.role}</div>
+          <div className="navbar-user" onClick={handleLogout}>
+            <span className="user-name-label">{user?.fullName?.toUpperCase() || 'Z PRIME'}</span>
+            <div className="navbar-avatar">
+              <FiUser style={{ fontSize: '20px', margin: '4px' }} />
             </div>
           </div>
-          <button className="logout-btn" onClick={handleLogout}>
-            <FiLogOut />
-            <span>Logout</span>
-          </button>
         </div>
-      </div>
+      </nav>
 
-      <div className="main-content">
-        <header className="header">
-          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
-            <FiMenu />
-          </button>
-          <div className="header-title">GolfPro</div>
-        </header>
+      <main className="main-content-wide">
+        {children}
+      </main>
 
-        <main className="content">
-          {children}
-        </main>
-      </div>
-
-      {sidebarOpen && <div className="overlay" onClick={() => setSidebarOpen(false)} />}
+      <footer className="site-footer">
+        <div className="footer-container">
+          <div className="footer-left">
+            <span className="footer-logo">CHARITY HEAVY</span>
+            <span className="footer-copyright">© 2024 CHARITY HEAVY. THE SOVEREIGN IMPACT.</span>
+          </div>
+          <div className="footer-links">
+            <Link to="/privacy" className="footer-link">PRIVACY POLICY</Link>
+            <Link to="/terms" className="footer-link">TERMS OF SERVICE</Link>
+            <Link to="/charity-partners" className="footer-link">CHARITY PARTNERS</Link>
+            <Link to="/contact" className="footer-link">CONTACT</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

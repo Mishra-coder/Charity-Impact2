@@ -25,7 +25,7 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', [
   authenticate,
   isSubscriber,
-  body('scoreValue').isInt({ min: 0, max: 200 }),
+  body('scoreValue').isInt({ min: 1, max: 45 }),
   body('scoreDate').isISO8601(),
   body('courseId').optional().isUUID()
 ], async (req, res) => {
@@ -37,7 +37,18 @@ router.post('/', [
 
     const { scoreValue, scoreDate, courseId } = req.body;
 
-    const { data: score, error } = await supabase
+    const { data: existingScore } = await supabase
+      .from('scores')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('score_date', scoreDate)
+      .single();
+
+    if (existingScore) {
+      return res.status(400).json({ error: { message: 'A score for this date already exists' } });
+    }
+
+    const { data: score, error: insertError } = await supabase
       .from('scores')
       .insert([{
         user_id: req.user.id,
@@ -48,8 +59,30 @@ router.post('/', [
       .select()
       .single();
 
-    if (error) {
+    if (insertError) {
       return res.status(500).json({ error: { message: 'Failed to save score' } });
+    }
+
+    const { count } = await supabase
+      .from('scores')
+      .select('*', { count: 'exact' })
+      .eq('user_id', req.user.id);
+
+    if (count > 5) {
+      const { data: oldestScore } = await supabase
+        .from('scores')
+        .select('id')
+        .eq('user_id', req.user.id)
+        .order('score_date', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (oldestScore) {
+        await supabase
+          .from('scores')
+          .delete()
+          .eq('id', oldestScore.id);
+      }
     }
 
     res.status(201).json({ success: true, data: score });

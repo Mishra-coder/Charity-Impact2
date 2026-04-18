@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import api from '../../utils/api';
-import { format } from 'date-fns';
-import '../Dashboard.css';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
@@ -36,70 +34,69 @@ const AdminUsers = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="loading">Loading...</div>
+        <div className="auth-container" style={{ minHeight: '60vh' }}>
+          <div className="step-bar active" style={{ width: '60px', animation: 'pulse 1.5s infinite' }}></div>
+        </div>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="dashboard">
-        <h1 className="page-title">Manage Users</h1>
+      <div className="dashboard-container">
+        <header className="dashboard-hero">
+          <h1 className="hero-title">Manage Users</h1>
+          <p className="hero-subtitle">SYSTEM REGISTER • IDENTITY GOVERNANCE</p>
+        </header>
 
-        <div className="dashboard-section">
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Name</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Email</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Role</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Joined</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Actions</th>
+        <div className="momentum-card">
+          <table className="champs-table">
+            <thead>
+              <tr>
+                <th>FULL NAME</th>
+                <th>EMAIL</th>
+                <th>ROLE</th>
+                <th>JOINED</th>
+                <th style={{ textAlign: 'right' }}>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id} className="champs-row">
+                  <td style={{ padding: '20px', fontWeight: '800' }}>{user.full_name}</td>
+                  <td style={{ padding: '20px', color: 'rgba(255,255,255,0.4)' }}>{user.email}</td>
+                  <td style={{ padding: '20px' }}>
+                    <div className="status-glow-badge">
+                      <div className={`status-dot ${user.role === 'admin' ? 'yellow' : user.role === 'subscriber' ? 'green' : 'gray'}`}></div>
+                      {user.role?.toUpperCase()}
+                    </div>
+                  </td>
+                  <td style={{ padding: '20px', color: 'rgba(255,255,255,0.4)' }}>
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </td>
+                  <td style={{ padding: '20px', textAlign: 'right' }}>
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      className="auth-input-lux"
+                      style={{
+                        padding: '8px 12px',
+                        background: '#0A0F0D',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        color: '#FFFFFF',
+                        fontSize: '12px'
+                      }}
+                    >
+                      <option value="visitor">Visitor</option>
+                      <option value="subscriber">Subscriber</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '12px' }}>{user.full_name}</td>
-                    <td style={{ padding: '12px', color: '#6b7280' }}>{user.email}</td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        textTransform: 'capitalize',
-                        background: user.role === 'admin' ? '#fee2e2' : user.role === 'subscriber' ? '#dcfce7' : '#f3f4f6',
-                        color: user.role === 'admin' ? '#dc2626' : user.role === 'subscriber' ? '#16a34a' : '#6b7280'
-                      }}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', color: '#6b7280' }}>
-                      {format(new Date(user.created_at), 'MMM dd, yyyy')}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <select
-                        value={user.role}
-                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                        style={{
-                          padding: '6px 12px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '14px'
-                        }}
-                      >
-                        <option value="visitor">Visitor</option>
-                        <option value="subscriber">Subscriber</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </Layout>

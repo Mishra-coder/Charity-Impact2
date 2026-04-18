@@ -15,6 +15,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminDraws from './pages/admin/AdminDraws';
 import AdminVerifications from './pages/admin/AdminVerifications';
 import AdminCharities from './pages/admin/AdminCharities';
+import WinnerVerification from './pages/WinnerVerification';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="/draws" element={<PrivateRoute><Draws /></PrivateRoute>} />
           <Route path="/subscription" element={<PrivateRoute><Subscription /></PrivateRoute>} />
           <Route path="/charities" element={<PrivateRoute><Charities /></PrivateRoute>} />
+          <Route path="/verify-winner" element={<PrivateRoute><WinnerVerification /></PrivateRoute>} />
           
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />

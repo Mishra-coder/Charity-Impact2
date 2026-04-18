@@ -14,7 +14,7 @@ if (!isConfigured) {
   console.error('The server will start but API calls will fail.\n');
 }
 
-// Use valid placeholder values that pass Supabase client validation
+
 const supabase = createClient(
   isConfigured ? supabaseUrl : 'https://placeholder.supabase.co', 
   isConfigured ? supabaseServiceKey : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwOTQ1OTIwMCwiZXhwIjoxOTI1MDM1MjAwfQ.placeholder',

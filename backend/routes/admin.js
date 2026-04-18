@@ -131,35 +131,43 @@ router.post('/draws/:drawId/execute', async (req, res) => {
       return res.status(400).json({ error: { message: 'No entries found for this draw' } });
     }
 
+    const { data: recentScores } = await supabase
+      .from('scores')
+      .select('score_value')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    const frequencies = {};
+    if (recentScores) {
+      for (const s of recentScores) {
+        frequencies[s.score_value] = (frequencies[s.score_value] || 0) + 1;
+      }
+    }
+
     const winningNumbers = [];
     while (winningNumbers.length < 5) {
-      const num = Math.floor(Math.random() * 46) + 1;
-      let exists = false;
-      for (let i = 0; i < winningNumbers.length; i++) {
-        if (winningNumbers[i] === num) {
-          exists = true;
-          break;
-        }
+      let num;
+      if (Math.random() > 0.3) {
+        const sortedFreq = Object.keys(frequencies).sort((a, b) => frequencies[b] - frequencies[a]);
+        num = parseInt(sortedFreq[Math.floor(Math.random() * Math.min(sortedFreq.length, 10))]);
       }
-      if (!exists) {
+      
+      if (!num || isNaN(num) || winningNumbers.includes(num)) {
+        num = Math.floor(Math.random() * 45) + 1;
+      }
+
+      if (!winningNumbers.includes(num)) {
         winningNumbers.push(num);
       }
     }
 
-    let maxMatches = 0;
-    let winners = [];
+    const winnerTiers = { match5: [], match4: [], match3: [] };
 
     for (const entry of entries) {
       const entryNumbers = JSON.parse(entry.entry_numbers);
       let matches = 0;
-      
-      for (let i = 0; i < entryNumbers.length; i++) {
-        for (let j = 0; j < winningNumbers.length; j++) {
-          if (entryNumbers[i] === winningNumbers[j]) {
-            matches++;
-            break;
-          }
-        }
+      for (const n of entryNumbers) {
+        if (winningNumbers.includes(n)) matches++;
       }
 
       await supabase
@@ -167,47 +175,67 @@ router.post('/draws/:drawId/execute', async (req, res) => {
         .update({ matched_count: matches })
         .eq('id', entry.id);
 
-      if (matches > maxMatches) {
-        maxMatches = matches;
-        winners = [entry];
-      } else if (matches === maxMatches && matches >= 3) {
-        winners.push(entry);
+      if (matches === 5) winnerTiers.match5.push(entry);
+      else if (matches === 4) winnerTiers.match4.push(entry);
+      else if (matches === 3) winnerTiers.match3.push(entry);
+    }
+
+    const pool = parseFloat(draw.total_prize_pool) + parseFloat(draw.carried_over_pool || 0);
+    const shares = { match5: pool * 0.4, match4: pool * 0.35, match3: pool * 0.25 };
+    let finalCarryOver = 0;
+
+    if (winnerTiers.match5.length > 0) {
+      const individualPrize = shares.match5 / winnerTiers.match5.length;
+      for (const w of winnerTiers.match5) {
+        await supabase.from('draw_entries').update({ is_winner: true, prize_amount: individualPrize }).eq('id', w.id);
+      }
+    } else {
+      finalCarryOver = shares.match5;
+    }
+
+    if (winnerTiers.match4.length > 0) {
+      const individualPrize = shares.match4 / winnerTiers.match4.length;
+      for (const w of winnerTiers.match4) {
+        await supabase.from('draw_entries').update({ is_winner: true, prize_amount: individualPrize }).eq('id', w.id);
       }
     }
 
-    let winnerId = null;
-    if (winners.length > 0 && maxMatches >= 3) {
-      const winner = winners[Math.floor(Math.random() * winners.length)];
-      winnerId = winner.user_id;
-
-      await supabase
-        .from('draw_entries')
-        .update({ is_winner: true })
-        .eq('id', winner.id);
+    if (winnerTiers.match3.length > 0) {
+      const individualPrize = shares.match3 / winnerTiers.match3.length;
+      for (const w of winnerTiers.match3) {
+        await supabase.from('draw_entries').update({ is_winner: true, prize_amount: individualPrize }).eq('id', w.id);
+      }
     }
 
-    const { data: updatedDraw, error: updateError } = await supabase
+    await supabase
       .from('draws')
       .update({
         status: 'completed',
         winning_numbers: JSON.stringify(winningNumbers),
-        winner_id: winnerId
       })
-      .eq('id', drawId)
-      .select()
-      .single();
+      .eq('id', drawId);
 
-    if (updateError) {
-      return res.status(500).json({ error: { message: 'Failed to update draw' } });
+    if (finalCarryOver > 0) {
+      await supabase
+        .from('draws')
+        .insert([{
+          draw_type: '5-match',
+          draw_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+          status: 'pending',
+          carried_over_pool: finalCarryOver
+        }]);
     }
 
     res.json({
       success: true,
       data: {
-        draw: updatedDraw,
         winningNumbers,
-        maxMatches,
-        winnersCount: winners.length
+        carryOver: finalCarryOver,
+        winners: {
+          match5: winnerTiers.match5.length,
+          match4: winnerTiers.match4.length,
+          match3: winnerTiers.match3.length
+        }
       }
     });
   } catch (error) {
@@ -402,10 +430,14 @@ router.get('/stats', async (req, res) => {
       }
     }
 
-    const { count: pendingVerifications } = await supabase
-      .from('winner_verifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
+    const { data: latestDraw } = await supabase
+      .from('draws')
+      .select('carried_over_pool')
+      .eq('status', 'pending')
+      .order('draw_date', { ascending: false })
+      .limit(1);
+
+    const rollingJackpot = latestDraw?.[0]?.carried_over_pool || 0;
 
     res.json({
       success: true,
@@ -414,7 +446,8 @@ router.get('/stats', async (req, res) => {
         activeSubscribers,
         totalPrizePool,
         totalCharityAmount,
-        pendingVerifications
+        pendingVerifications,
+        rollingJackpot
       }
     });
   } catch (error) {
